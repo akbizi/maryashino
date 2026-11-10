@@ -1,1008 +1,189 @@
-<!DOCTYPE html>
+<!doctype html>
 <html lang="ru">
 <head>
-    <meta charset="UTF-8">
-    <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>Маряшино — Уроки с Зити</title>
-    <script src="https://cdn.jsdelivr.net/npm/canvas-confetti@1.6.0/dist/confetti.browser.min.js"></script>
-    <style>
-        :root {
-            --primary: #D36B9A; --primary-light: #F4A6C1; --bg: #FFF0F5;
-            --card: #FFFFFF; --text: #4A2C3A; --text-light: #8A6373;
-            --heart: #FF6B9D; --success: #7BC89C; --warning: #F0A080;
-            --border: #F5D6E0; --shadow: rgba(211,107,154,.15);
-        }
-        * { box-sizing: border-box; margin: 0; padding: 0; font-family: 'Segoe UI', 'Comic Sans MS', sans-serif; -webkit-tap-highlight-color: transparent; }
-        body { background: var(--bg); background-image: radial-gradient(#F4A6C1 1px, transparent 1px); background-size: 24px 24px; color: var(--text); min-height: 100vh; padding-bottom: 90px; overflow-x: hidden; }
-        
-        header { position: sticky; top: 0; z-index: 40; background: rgba(255,255,255,0.9); backdrop-filter: blur(10px); border-bottom: 2px solid var(--border); padding: 12px 16px; display: flex; justify-content: space-between; align-items: center; }
-        .logo { display: flex; align-items: center; gap: 8px; font-weight: bold; font-size: 18px; color: var(--primary); }
-        .stats { display: flex; gap: 8px; align-items: center; font-weight: bold; font-size: 14px; }
-        .badge { background: #FFF0F6; border: 2px solid var(--primary-light); padding: 4px 10px; border-radius: 20px; display: flex; align-items: center; gap: 4px; }
-
-        .container { max-width: 800px; margin: 20px auto; padding: 0 16px; }
-        .tab-content { display: none; animation: fadeIn 0.3s; }
-        .tab-content.active { display: block; }
-        @keyframes fadeIn { from { opacity: 0; transform: translateY(10px); } to { opacity: 1; transform: translateY(0); } }
-
-        .card { background: var(--card); border-radius: 24px; padding: 24px; box-shadow: 0 8px 20px var(--shadow); border: 2px solid var(--border); margin-bottom: 20px; }
-        
-        .btn { background: linear-gradient(135deg, var(--primary), var(--primary-light)); color: white; border: none; padding: 14px 20px; border-radius: 16px; font-size: 16px; font-weight: bold; cursor: pointer; transition: 0.1s; width: 100%; box-shadow: 0 4px 0 rgba(0,0,0,0.1); }
-        .btn:active { transform: translateY(2px); box-shadow: 0 2px 0 rgba(0,0,0,0.1); }
-        .btn-secondary { background: #FFF0F6; color: var(--primary); border: 2px solid var(--primary-light); box-shadow: 0 4px 0 var(--primary-light); }
-        .btn-warning { background: var(--warning); }
-        .grid-2 { display: grid; grid-template-columns: 1fr 1fr; gap: 10px; }
-
-        .bar-bg { background: #EDF2F7; height: 12px; border-radius: 8px; overflow: hidden; margin-top: 4px;}
-        .bar-fill { height: 100%; transition: width 0.3s; border-radius: 8px; }
-        .fill-hunger { background: #FFB347; }
-        .fill-mood { background: var(--heart); }
-        .fill-energy { background: #4FACFE; }
-        .stat-label { display: flex; justify-content: space-between; font-size: 13px; font-weight: bold; color: var(--text-light); margin-bottom: 4px; }
-
-        #game-area { position: relative; height: 300px; background: #E0F7FA; border-radius: 20px; overflow: hidden; display: none; touch-action: none; border: 2px dashed var(--primary-light); }
-        #basket { position: absolute; bottom: 0; font-size: 40px; transition: left 0.1s; transform: translateX(-50%); }
-        .apple { position: absolute; font-size: 30px; }
-        
-        /* Стили для второй игры */
-        .memory-grid { display: grid; grid-template-columns: repeat(4, 1fr); gap: 8px; margin-top: 15px; }
-        .memory-card { background: var(--primary-light); height: 60px; display: flex; justify-content: center; align-items: center; font-size: 24px; border-radius: 10px; cursor: pointer; user-select: none; color: transparent; transition: 0.3s; }
-        .memory-card.flipped { background: white; border: 2px solid var(--primary); color: black; }
-        .memory-card.matched { background: var(--success); color: white; border: none; }
-
-        nav { position: fixed; bottom: 0; left: 0; right: 0; background: rgba(255,255,255,0.95); backdrop-filter: blur(10px); border-top: 2px solid var(--border); display: flex; justify-content: space-around; padding: 8px; z-index: 50; }
-        .nav-btn { background: none; border: none; display: flex; flex-direction: column; align-items: center; font-size: 11px; font-weight: bold; color: var(--text-light); cursor: pointer; padding: 8px; border-radius: 12px; transition: 0.2s; }
-        .nav-btn.active { color: var(--primary); background: #FFF0F6; }
-        .nav-btn span { font-size: 20px; margin-bottom: 2px; }
-
-        #pet-container {
-            position: fixed; bottom: 80px; left: 50px;
-            width: 140px; height: 180px; z-index: 40;
-            pointer-events: none; transition: opacity 0.35s, transform 0.1s;
-            filter: drop-shadow(0 10px 10px rgba(0,0,0,0.15));
-            transform-origin: bottom center;
-        }
-        body.hover-ui #pet-container { opacity: 0.15 !important; }
-        #pet-svg-wrapper svg { width: 100%; height: 100%; overflow: visible; }
-        
-        .zzz { position: absolute; top: -20px; right: 0; font-size: 24px; font-weight: bold; color: #4FACFE; animation: floatZ 2s infinite; display: none; }
-        @keyframes floatZ { 0% { opacity: 0; transform: translateY(0); } 50% { opacity: 1; } 100% { opacity: 0; transform: translateY(-20px); } }
-
-        /* Стили Учителя Зити */
-        .teacher-box { display: flex; gap: 15px; align-items: center; background: #FFF0F6; padding: 15px; border-radius: 16px; margin-bottom: 20px; border: 2px solid var(--primary-light); }
-        .teacher-img { width: 60px; height: 60px; border-radius: 50%; object-fit: cover; border: 2px solid var(--primary); }
-        .teacher-text { font-size: 14px; font-style: italic; color: var(--text); }
-    </style>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width,initial-scale=1">
+<meta name="theme-color" content="#f8dff0">
+<title>Маряшино — мир знаний и чудес</title>
+<style>
+:root{--pink:#f7c8df;--pink2:#ffe7f1;--lav:#dcd2ff;--mint:#c9f0df;--peach:#ffdfc7;--ink:#51445f;--muted:#887b91;--paper:#fffafd;--line:#f0dfeb;--gold:#ffcf65;--shadow:0 12px 32px #9b72931c}
+*{box-sizing:border-box}body{margin:0;background:linear-gradient(135deg,#fff4f8,#f4f0ff 55%,#effcf7);color:var(--ink);font-family:ui-rounded,"Trebuchet MS",system-ui,sans-serif;min-height:100vh}
+button,input{font:inherit}button{border:0;cursor:pointer;color:inherit}button:focus-visible,input:focus-visible{outline:3px solid #a88cf4;outline-offset:3px}
+.app{max-width:1180px;margin:auto;padding:18px}.topbar{display:flex;align-items:center;justify-content:space-between;gap:12px;margin-bottom:16px}.brand{display:flex;align-items:center;gap:10px;font-weight:1000;font-size:clamp(21px,4vw,30px);letter-spacing:-1px}.brand-mark{width:44px;height:44px;border-radius:15px;background:linear-gradient(135deg,#ffc7df,#d8caff);display:grid;place-items:center;font-size:25px;box-shadow:var(--shadow)}.wallet{background:#fff;border:1px solid var(--line);border-radius:18px;padding:10px 15px;font-weight:900;box-shadow:var(--shadow);white-space:nowrap}.heart{color:#f06b9b}.layout{display:grid;grid-template-columns:205px minmax(0,1fr);gap:16px}.nav{background:#ffffffb8;border:1px solid #fff;border-radius:24px;padding:12px;height:max-content;position:sticky;top:12px;box-shadow:var(--shadow)}.nav button{width:100%;display:flex;align-items:center;gap:12px;padding:13px 12px;border-radius:15px;background:transparent;text-align:left;font-weight:800;color:#786b83;margin:3px 0;transition:.2s}.nav button.active,.nav button:hover{background:linear-gradient(100deg,#ffe5f0,#eee8ff);color:#59496a;transform:translateX(2px)}.nav .ico{font-size:21px;width:25px;text-align:center}.main{min-width:0}.panel{display:none;animation:appear .35s ease}.panel.active{display:block}@keyframes appear{from{opacity:0;transform:translateY(8px)}to{opacity:1;transform:none}}.card{background:#ffffffdc;border:1px solid #fff;border-radius:25px;padding:22px;box-shadow:var(--shadow);margin-bottom:15px}.hero{display:grid;grid-template-columns:1.2fr .8fr;align-items:center;gap:10px;overflow:hidden;min-height:280px;background:linear-gradient(120deg,#ffe1ef,#f0eaff 70%,#e1f8ef)}h1,h2,h3,p{margin-top:0}h1{font-size:clamp(28px,5vw,44px);line-height:1.08;margin-bottom:12px}h2{font-size:25px;margin-bottom:8px}h3{font-size:18px;margin-bottom:8px}.sub{color:var(--muted);line-height:1.55}.btn{padding:12px 17px;border-radius:15px;font-weight:900;background:#f4eaff;transition:.18s;box-shadow:0 4px 0 #d7c7eb}.btn:hover{transform:translateY(-2px);filter:saturate(1.1)}.btn.primary{background:linear-gradient(100deg,#ffb9d5,#d6c8ff);box-shadow:0 4px 0 #d2a9d4;color:#57475f}.btn.mint{background:#d5f5e5;box-shadow:0 4px 0 #a9ddc4}.btn.peach{background:#ffe3ce;box-shadow:0 4px 0 #eec5a9}.btn.small{padding:9px 12px;font-size:13px}.actions{display:flex;flex-wrap:wrap;gap:10px;margin-top:17px}.pet-preview{height:255px;position:relative;display:grid;place-items:center}.pet-preview:before{content:"";position:absolute;width:230px;height:80px;bottom:12px;background:#fff9;border-radius:50%;filter:blur(1px)}.pet-svg{width:min(100%,230px);height:auto;position:relative;z-index:1;filter:drop-shadow(0 10px 6px #8a6d7820)}.pet-svg .eye-lids{transform-origin:center;animation:blink 5s infinite}.pet-svg .lid{opacity:0}.pet-svg.blink .lid{opacity:1}.pet-svg.blink .pupil{opacity:0}@keyframes blink{0%,91%,95%,100%{transform:scaleY(0)}92%,94%{transform:scaleY(1)}}.pet-svg.sleep .eye-open{opacity:0}.pet-svg.sleep .lid{opacity:1}.pet-svg.sleep .mouth{opacity:0}.pet-svg.sleep .sleep-mouth{opacity:1}.pet-svg.walk{animation:bob .35s infinite alternate}@keyframes bob{to{transform:translateY(-5px) rotate(1deg)}}.bubble{background:white;border-radius:18px;padding:10px 14px;box-shadow:var(--shadow);font-weight:800;position:absolute;top:0;right:0;max-width:190px;font-size:13px}.grid2{display:grid;grid-template-columns:repeat(2,minmax(0,1fr));gap:14px}.grid3{display:grid;grid-template-columns:repeat(3,minmax(0,1fr));gap:12px}.stat{background:#fff7fb;border-radius:17px;padding:13px}.stat b{display:block;font-size:22px}.progress{height:10px;background:#f1e8f1;border-radius:20px;overflow:hidden;margin-top:8px}.progress i{height:100%;display:block;border-radius:20px;background:linear-gradient(90deg,#ffb5d2,#b9a8fa);transition:width .4s}.section-head{display:flex;justify-content:space-between;align-items:center;gap:10px;margin:8px 0 14px}.lesson-list{display:grid;grid-template-columns:repeat(2,minmax(0,1fr));gap:12px}.lesson{padding:16px;border:1px solid var(--line);background:#fff;border-radius:19px}.lesson .emoji{font-size:27px}.lesson p{font-size:13px;color:var(--muted);line-height:1.4;margin:6px 0 12px}.lesson.done{background:#f1fff7;border-color:#c8edda}.tag{font-size:11px;font-weight:900;color:#8c7c9b;background:#f6eff8;padding:5px 8px;border-radius:20px}.quiz{max-width:700px;margin:auto}.question{font-size:21px;font-weight:900;margin:18px 0}.answers{display:grid;grid-template-columns:1fr 1fr;gap:10px}.answer{padding:13px;border:2px solid #f0e5f1;background:#fff;border-radius:15px;text-align:left;font-weight:800}.answer:hover{border-color:#c9b9f4}.answer.correct{background:#e4f9ed;border-color:#8dd6ad}.answer.wrong{background:#fff0f2;border-color:#f3a5b9}.feedback{min-height:26px;font-weight:800;margin:12px 0}.hidden{display:none!important}.pet-room{background:linear-gradient(180deg,#f8eaff,#fff1f5 65%,#dff5e9);overflow:hidden;position:relative;min-height:400px}.pet-stage{height:260px;position:relative;display:flex;align-items:end;justify-content:center}.floor{position:absolute;bottom:0;height:55px;left:-5%;right:-5%;background:repeating-linear-gradient(90deg,#d5f0df 0 70px,#c8e9d6 70px 140px);transform:perspective(150px) rotateX(8deg)}.walker{position:absolute;bottom:24px;left:40%;width:160px;transition:left 5s linear}.walker .pet-svg{width:100%}.pet-controls{display:flex;gap:9px;flex-wrap:wrap}.bars{display:grid;grid-template-columns:repeat(3,1fr);gap:10px}.bar-label{font-size:12px;font-weight:900}.chat{display:flex;gap:8px;margin-top:12px}.chat input{min-width:0;flex:1;border:1px solid var(--line);border-radius:14px;padding:12px;background:white}.chat-log{height:130px;overflow:auto;background:#fff9;border-radius:15px;padding:10px;font-size:13px;line-height:1.45}.msg{margin:5px 0}.msg b{color:#9b71b0}.game-room{background:linear-gradient(145deg,#ded4ff,#ffe1ef 55%,#d7f5e7);position:relative;overflow:hidden}.game-room:before{content:"";position:absolute;inset:auto 0 0;height:100px;background:linear-gradient(transparent,#b9a8df66);pointer-events:none}.game-card{background:#ffffffd9;border:1px solid white;border-radius:20px;padding:14px;cursor:pointer;transition:.2s}.game-card:hover{transform:translateY(-4px)}.game-art{height:95px;border-radius:15px;display:grid;place-items:center;font-size:43px;margin-bottom:10px;background:linear-gradient(135deg,#ffe2ed,#e5dcff)}canvas{display:block;width:100%;max-width:720px;height:300px;background:radial-gradient(circle at 50% 30%,#4d477d,#201d43);border-radius:18px;touch-action:manipulation}.game-wrap{margin-top:14px}.shop-item{background:white;border:1px solid var(--line);border-radius:18px;padding:14px;text-align:center}.shop-item .art{font-size:36px;margin:5px}.owned{color:#4b9b72;font-weight:900}.parent-lock{max-width:360px;margin:40px auto;text-align:center}.parent-lock input{padding:13px;border:1px solid var(--line);border-radius:12px;width:130px;text-align:center;letter-spacing:6px}.toast{position:fixed;bottom:22px;left:50%;transform:translateX(-50%);background:#554765;color:white;padding:12px 18px;border-radius:14px;box-shadow:var(--shadow);z-index:20;animation:appear .2s}.footer-note{font-size:12px;color:var(--muted);text-align:center;padding:10px}.sparkle{position:absolute;animation:float 4s ease-in-out infinite;opacity:.7}@keyframes float{50%{transform:translateY(-14px) rotate(12deg)}}@media(max-width:760px){.app{padding:10px}.layout{grid-template-columns:1fr}.nav{position:sticky;top:0;z-index:10;display:flex;overflow:auto;padding:7px;border-radius:17px}.nav button{min-width:max-content;width:auto;padding:10px}.nav button span:last-child{display:none}.hero{grid-template-columns:1fr}.pet-preview{height:180px}.pet-svg{width:160px}.grid3{grid-template-columns:1fr 1fr}.lesson-list{grid-template-columns:1fr}.bubble{right:5px}.card{padding:17px}.bars{grid-template-columns:1fr}.grid2{grid-template-columns:1fr}}@media(max-width:420px){.answers{grid-template-columns:1fr}.grid3{grid-template-columns:1fr 1fr}.wallet{padding:8px 10px}}
+</style>
 </head>
 <body>
-
-<header>
-    <div class="logo">🐾 Маряшино</div>
-    <div class="stats">
-        <div class="badge">💖 <span id="hearts">50</span></div>
-    </div>
-</header>
-
-<div class="container">
-    <!-- Вкладка 1: Приветствие -->
-    <div id="tab-ziti" class="tab-content active">
-        <div class="card" style="text-align: center;">
-            <img src="ziti.png" alt="Зити" style="width: 120px; height: 120px; border-radius: 50%; object-fit: cover; border: 4px solid var(--primary-light); margin-bottom: 15px;" onerror="this.style.display='none'">
-            <h2 style="color: var(--primary); margin-bottom: 10px;">Привет, я Зити! 👋</h2>
-            <p style="color: var(--text-light); font-size: 15px; margin-bottom: 20px;">Я твой учитель. А еще у тебя есть питомец, который гуляет по экрану. Решай задачи, зарабатывай сердечки и заботься о нем!</p>
-            <button class="btn" onclick="switchTab('lessons')">Начать урок 🚀</button>
-        </div>
-    </div>
-
-    <!-- Вкладка 2: Уроки -->
-    <div id="tab-lessons" class="tab-content">
-        <div class="card">
-            <div class="teacher-box">
-                <img src="ziti.png" class="teacher-img" onerror="this.replaceWith(Object.assign(document.createElement('div'),{innerText:'👨‍🏫',className:'teacher-img',style:'display:flex;align-items:center;justify-content:center;font-size:30px;background:#FFF0F6'}))">
-                <div class="teacher-text" id="ziti-dialog">Внимательно прочитай задачу.</div>
-            </div>
-            <div style="display: flex; justify-content: space-between; margin-bottom: 15px; font-weight: bold; font-size: 14px; color: var(--primary);">
-                <span id="task-type">Загрузка...</span>
-                <span id="task-progress">1/5</span>
-            </div>
-            <div class="bar-bg" style="margin-bottom: 20px;"><div class="bar-fill fill-mood" id="lesson-bar" style="width: 0%;"></div></div>
-            <div style="background: #FFF0F6; padding: 20px; border-radius: 16px; text-align: center; margin-bottom: 20px;">
-                <p id="task-q" style="font-size: 18px; font-weight: bold;">Загрузка задачи...</p>
-            </div>
-            <div id="answer-area"></div>
-            <button class="btn btn-warning" style="margin-top:15px;" onclick="askTeacher()">Я не знаю 🤔</button>
-        </div>
-    </div>
-
-    <!-- Вкладка 3: Игры -->
-    <div id="tab-games" class="tab-content">
-        <!-- Игра 1 -->
-        <div class="card">
-            <h2 style="color: var(--primary); margin-bottom: 10px; text-align: center;">🍎 Поймай яблочко</h2>
-            <div style="display: flex; justify-content: space-between; font-weight: bold; margin-bottom: 10px;">
-                <span>Счёт: <span id="score">0</span>/10</span>
-                <button class="btn btn-secondary" style="width: auto; padding: 6px 15px;" onclick="startGame()">Играть</button>
-            </div>
-            <div id="game-area"><div id="basket">🧺</div></div>
-        </div>
-        <!-- Игра 2 -->
-        <div class="card">
-            <h2 style="color: var(--primary); margin-bottom: 10px; text-align: center;">🧠 Найди пару</h2>
-            <div class="memory-grid" id="memory-grid"></div>
-            <button class="btn btn-secondary" style="margin-top:15px;" onclick="initMemoryGame()">Начать заново</button>
-        </div>
-    </div>
-
-    <!-- Вкладка 4: Питомец -->
-    <div id="tab-pet" class="tab-content">
-        <div class="card">
-            <h2 style="color: var(--primary); margin-bottom: 20px; text-align: center;">🐾 Мой друг</h2>
-            <div class="stat-label"><span>Сытость 🍎</span><span id="val-hunger">100%</span></div>
-            <div class="bar-bg"><div class="bar-fill fill-hunger" id="bar-hunger" style="width:100%"></div></div>
-            <div class="stat-label" style="margin-top: 10px;"><span>Настроение ⚽</span><span id="val-mood">100%</span></div>
-            <div class="bar-bg"><div class="bar-fill fill-mood" id="bar-mood" style="width:100%"></div></div>
-            <div class="stat-label" style="margin-top: 10px;"><span>Энергия ⚡</span><span id="val-energy">100%</span></div>
-            <div class="bar-bg"><div class="bar-fill fill-energy" id="bar-energy" style="width:100%"></div></div>
-            <div class="grid-2" style="margin-top: 20px;">
-                <button class="btn" onclick="feedPet()">Покормить</button>
-                <button class="btn btn-secondary" onclick="playPet()">Поиграть</button>
-                <button class="btn btn-secondary" onclick="callPet()">Позвать</button>
-                <button class="btn btn-secondary" onclick="freezePet()" id="btn-freeze">Не отвлекай</button>
-                <button class="btn btn-warning" style="grid-column: span 2;" onclick="sleepPet()" id="btn-sleep">Уложить спать 😴</button>
-            </div>
-        </div>
-    </div>
-
-    <!-- Вкладка 5: Родителям -->
-    <div id="tab-parents" class="tab-content">
-        <div class="card" style="text-align: center;">
-            <h2 style="margin-bottom: 15px;">🔒 Родителям</h2>
-            <input type="password" id="pin" placeholder="PIN (1234)" style="width: 100%; padding: 12px; border-radius: 12px; border: 2px solid var(--border); margin-bottom: 15px; text-align: center; font-size: 18px;">
-            <button class="btn" onclick="authParent()">Войти</button>
-            <div id="parent-stats" style="display: none; margin-top: 20px; text-align: left;">
-                <p><strong>Решено задач:</strong> <span id="stat-solved">0</span></p>
-                <button class="btn btn-warning" style="margin-top: 20px;" onclick="resetProgress()">Сбросить прогресс</button>
-            </div>
-        </div>
-    </div>
-</div>
-
-<nav>
-    <button class="nav-btn active" onclick="switchTab('ziti')" id="nav-ziti"><span>👨‍🏫</span>Учитель</button>
-    <button class="nav-btn" onclick="switchTab('lessons')" id="nav-lessons"><span>📖</span>Уроки</button>
-    <button class="nav-btn" onclick="switchTab('games')" id="nav-games"><span>🎮</span>Игры</button>
-    <button class="nav-btn" onclick="switchTab('pet')" id="nav-pet"><span>🐾</span>Питомец</button>
-    <button class="nav-btn" onclick="switchTab('parents')" id="nav-parents"><span>🔒</span>Родителям</button>
+<div class="app">
+<header class="topbar"><div class="brand"><div class="brand-mark">🌸</div>Маряшино</div><div class="wallet">💗 <span id="hearts">0</span> сердечек</div></header>
+<div class="layout">
+<nav class="nav" aria-label="Главное меню">
+<button class="active" data-tab="home"><span class="ico">🏡</span><span>Зити</span></button>
+<button data-tab="lessons"><span class="ico">📚</span><span>Уроки</span></button>
+<button data-tab="pet"><span class="ico">🐻</span><span>Питомец</span></button>
+<button data-tab="games"><span class="ico">🎮</span><span>Игротека</span></button>
+<button data-tab="shop"><span class="ico">🎀</span><span>Магазин</span></button>
+<button data-tab="parents"><span class="ico">👨‍👩‍👧</span><span>Родителям</span></button>
 </nav>
-
-<div id="pet-container">
-    <div class="zzz" id="zzz-text">Zzz</div>
-    <div id="pet-svg-wrapper"></div>
-</div><script>
-// --- СОСТОЯНИЕ ---
-let state = {
-    hearts: 50, solved: 0, lessonTask: 0,
-    pet: { hunger: 100, mood: 100, energy: 100, isSleeping: false, ignore: false, mouth: null }
-};
-let manifest = null;
-let petX = 50, dir = 1, petState = 'idle', animTime = 0;
-
-// --- НАВИГАЦИЯ ---
-function switchTab(id) {
-    document.querySelectorAll('.tab-content').forEach(t => t.classList.remove('active'));
-    document.querySelectorAll('.nav-btn').forEach(b => b.classList.remove('active'));
-    document.getElementById(`tab-${id}`).classList.add('active');
-    document.getElementById(`nav-${id}`).classList.add('active');
-    if(id === 'lessons') loadTask();
-    if(id === 'games') initMemoryGame();
-}
-
-// --- УЧИТЕЛЬ ЗИТИ И ЗАДАЧИ ---
-const TASKS = [
-    { type: 'Арифметика', q: 'У Маряшины было 8 конфет. Она отдала 3. Сколько осталось?', a: '5', hint: 'Отдала - значит вычитаем. 8 - 3 = ?' },
-    { type: 'Логика', q: 'Все коты мяукают. Мурка — кот. Что делает Мурка? (Напиши "мяукает")', a: 'мяукает', hint: 'Мурка - кот, значит она...' },
-    { type: 'IQ', q: 'Продолжи ряд: 2, 4, 6, 8, ... Какое следующее число?', a: '10', hint: 'Каждый раз прибавляется 2.' },
-    { type: 'Внимание', q: 'Найди лишнее: яблоко, груша, морковь, банан.', a: 'морковь', hint: 'Морковь - это овощ, а остальное - фрукты.' },
-    { type: 'Логика', q: 'Что тяжелее: 1 кг ваты или 1 кг железа? (Напиши "одинаково")', a: 'одинаково', hint: 'Вес одинаковый - 1 килограмм!' }
+<main class="main">
+<section id="home" class="panel active">
+<div class="card hero"><div><span class="tag">ТВОЯ ДОБРАЯ ВСЕЛЕННАЯ ✨</span><h1>Привет, звёздочка!<br>Пора творить чудеса</h1><p class="sub">Учись, играй и заботься об iZi. За старания ты получаешь сердечки и открываешь новые украшения!</p><div class="actions"><button class="btn primary" id="startLesson">📖 Начать урок</button><button class="btn mint" id="callIzi">💬 Позвать iZi</button></div></div>
+<div class="pet-preview"><span class="bubble">Привет! Я iZi 💜</span><div id="homePet"></div></div></div>
+<div class="grid3"><div class="stat">📚 <b id="statLessons">0</b><span class="sub">уроков пройдено</span></div><div class="stat">⭐ <b id="statBest">0%</b><span class="sub">лучший результат</span></div><div class="stat">🎁 <b id="statItems">0</b><span class="sub">украшений</span></div></div>
+<div class="card"><h3>Твой план на сегодня 🌈</h3><p class="sub">Один урок, одна игра и немного заботы о питомце — отличный день!</p><div class="progress"><i id="dailyProgress" style="width:0%"></i></div><small class="sub" id="dailyText">0 из 3 добрых дел</small></div>
+</section>
+<section id="lessons" class="panel">
+<div class="section-head"><div><h2>Уроки и открытия 📚</h2><p class="sub">4–5 класс · выбери тему и собери сердечки</p></div><span class="tag">+10 💗 за урок</span></div>
+<div id="lessonList" class="lesson-list"></div>
+</section>
+<section id="quizPanel" class="panel">
+<div class="card quiz"><div class="section-head"><span class="tag" id="quizSubject">УРОК</span><button class="btn small" id="quitQuiz">✕ Выйти</button></div><div class="progress"><i id="quizProgress" style="width:0%"></i></div><div id="quizContent"></div></div>
+</section>
+<section id="pet" class="panel">
+<div class="card pet-room"><div class="section-head"><div><h2>Комната iZi 🏠</h2><p class="sub">Твой маленький друг всегда рад тебе</p></div><span class="tag" id="petMoodText">Счастлив(а)</span></div>
+<div class="pet-stage"><div class="bubble" id="petBubble">Давай дружить! 💜</div><div class="walker" id="walker"></div><div class="floor"></div></div>
+<div class="bars"><div><div class="bar-label">🍓 Сытость <span id="hungerVal">80%</span></div><div class="progress"><i id="hungerBar" style="width:80%"></i></div></div><div><div class="bar-label">😊 Настроение <span id="moodVal">85%</span></div><div class="progress"><i id="moodBar" style="width:85%"></i></div></div><div><div class="bar-label">⚡ Энергия <span id="energyVal">90%</span></div><div class="progress"><i id="energyBar" style="width:90%"></i></div></div></div>
+<div class="pet-controls" style="margin-top:15px"><button class="btn peach" id="feedPet">🍓 Покормить</button><button class="btn mint" id="playPet">🪁 Поиграть</button><button class="btn" id="sleepPet">🌙 Спать</button><button class="btn small" id="wakePet">☀️ Разбудить</button></div></div>
+<div class="card"><h3>Поговорим? 💌</h3><div class="chat-log" id="chatLog"><div class="msg"><b>iZi:</b> Привет! Расскажи, как прошёл твой день ✨</div></div><form class="chat" id="chatForm"><input id="chatInput" maxlength="500" placeholder="Напиши iZi..." autocomplete="off"><button class="btn primary">➤</button></form><p class="footer-note">Сообщения отправляются на сервер. Не указывай личные данные, адрес или пароль.</p></div>
+</section>
+<section id="games" class="panel">
+<div class="card game-room"><span class="sparkle" style="left:8%;top:20%">✦</span><span class="sparkle" style="right:10%;top:45%">✧</span><h2>Игротека чудес 🎠</h2><p class="sub">Три весёлых испытания! За игру можно заработать до 5 сердечек.</p>
+<div class="grid3">
+<div class="game-card" data-game="stars"><div class="game-art">🌟🫧</div><b>Лови звёздочки</b><p class="sub">Нажимай на сияющие звёзды!</p></div>
+<div class="game-card" data-game="math"><div class="game-art">🎈➕</div><b>Воздушный счёт</b><p class="sub">Решай примеры и лови ответ.</p></div>
+<div class="game-card" data-game="memory"><div class="game-art">🧠💎</div><b>Пары сокровищ</b><p class="sub">Найди одинаковые картинки.</p></div>
+</div><div class="game-wrap hidden" id="gameWrap"><div class="section-head"><h3 id="gameTitle">Игра</h3><button class="btn small" id="closeGame">Закрыть</button></div><p class="sub" id="gameHelp"></p><canvas id="gameCanvas" width="720" height="300" aria-label="Игровое поле"></canvas><div class="actions"><span class="tag" id="gameScore">Счёт: 0</span><button class="btn primary small hidden" id="restartGame">Играть ещё</button></div></div>
+</div></section>
+<section id="shop" class="panel">
+<div class="section-head"><div><h2>Магазин iZi 🎀</h2><p class="sub">Покупай приятности за заработанные сердечки</p></div><span class="tag">💗 <span id="shopHearts">0</span></span></div>
+<div id="shopList" class="grid3"></div>
+</section>
+<section id="parents" class="panel">
+<div class="card parent-lock" id="parentLock"><div style="font-size:40px">🔐</div><h2>Только для родителей</h2><p class="sub">Введите PIN-код для просмотра прогресса</p><input id="pinInput" type="password" inputmode="numeric" maxlength="4" placeholder="••••"><div class="actions" style="justify-content:center"><button class="btn primary" id="pinButton">Войти</button></div><p class="sub" id="pinError"></p></div>
+<div id="parentData" class="hidden"><div class="section-head"><h2>Прогресс ребёнка 🌷</h2><button class="btn small" id="parentExit">Выйти</button></div><div class="grid3"><div class="stat">📚<b id="pLessons">0</b><span class="sub">уроков завершено</span></div><div class="stat">💗<b id="pHearts">0</b><span class="sub">сердечек сейчас</span></div><div class="stat">🎮<b id="pGames">0</b><span class="sub">игр сыграно</span></div></div><div class="card"><h3>Результаты по предметам</h3><div id="subjectStats"></div></div><div class="card"><h3>Управление данными</h3><p class="sub">Сброс удалит прогресс, сердечки, покупки и состояние питомца на этом устройстве.</p><button class="btn peach" id="resetData">Сбросить весь прогресс</button></div></div>
+</section>
+</main></div></div>
+<div id="toast" class="toast hidden" role="status"></div>
+<script>
+"use strict";
+const $=s=>document.querySelector(s), $$=s=>[...document.querySelectorAll(s)];
+const STORE="maryashino_v1";
+const fresh=()=>({hearts:20,completed:{},scores:{},items:[],games:0,pet:{hunger:80,mood:85,energy:90,sleep:false},daily:{lesson:false,game:false,pet:false}});
+let data;try{data={...fresh(),...JSON.parse(localStorage.getItem(STORE)||"{}")};data.pet={...fresh().pet,...(data.pet||{})};data.daily={...fresh().daily,...(data.daily||{})};}catch{data=fresh()}
+function save(){localStorage.setItem(STORE,JSON.stringify(data));renderWallet();renderHomeStats()}
+function toast(t){let el=$("#toast");el.textContent=t;el.classList.remove("hidden");clearTimeout(toast.timer);toast.timer=setTimeout(()=>el.classList.add("hidden"),2400)}
+function addHearts(n){data.hearts+=n;save();toast("+"+n+" сердечек! 💗")}
+function switchTab(id){$$(".panel").forEach(p=>p.classList.toggle("active",p.id===id));$$(".nav button").forEach(b=>b.classList.toggle("active",b.dataset.tab===id||id==="quizPanel"&&b.dataset.tab==="lessons"));if(id==="parents")renderParents();if(id==="shop")renderShop()}
+$$(".nav button").forEach(b=>b.onclick=()=>switchTab(b.dataset.tab));
+function petSVG(){return `<svg class="pet-svg" viewBox="0 0 400 520" xmlns="http://www.w3.org/2000/svg" aria-label="Питомец iZi">
+<defs><linearGradient id="fur" x2="0" y2="1"><stop stop-color="#fff4e9"/><stop offset="1" stop-color="#e8c9e8"/></linearGradient><linearGradient id="shirt" x2="1" y2="1"><stop stop-color="#b6e9df"/><stop offset="1" stop-color="#bca8ed"/></linearGradient></defs>
+<!-- body, placed by manifest: center 200,330 --> <ellipse cx="200" cy="348" rx="74" ry="91" fill="url(#fur)" stroke="#b995c2" stroke-width="3"/>
+<path d="M145 292 Q200 265 255 292 L264 380 Q200 420 136 380Z" fill="url(#shirt)" stroke="#a98bc5" stroke-width="3"/><path d="M174 314 Q200 337 226 314" fill="none" stroke="#fff" stroke-width="6" stroke-linecap="round"/>
+<!-- limbs --> <path d="M143 298 Q119 323 128 367" fill="none" stroke="#e8c9e8" stroke-width="22" stroke-linecap="round"/><path d="M257 298 Q281 323 272 367" fill="none" stroke="#e8c9e8" stroke-width="22" stroke-linecap="round"/><circle cx="127" cy="370" r="17" fill="#f8dfed"/><circle cx="273" cy="370" r="17" fill="#f8dfed"/>
+<path d="M176 404 L173 466" stroke="#dcb9d8" stroke-width="24" stroke-linecap="round"/><path d="M224 404 L227 466" stroke="#dcb9d8" stroke-width="24" stroke-linecap="round"/><ellipse cx="169" cy="477" rx="31" ry="13" fill="#b69ad2"/><ellipse cx="231" cy="477" rx="31" ry="13" fill="#b69ad2"/>
+<!-- head --> <path d="M111 166 Q111 89 200 89 Q289 89 289 166 L282 226 Q267 279 200 280 Q133 279 118 226Z" fill="url(#fur)" stroke="#b995c2" stroke-width="4"/>
+<!-- ears --> <path d="M126 143 Q88 101 105 75 Q143 81 157 120" fill="#f6d5e7" stroke="#b995c2" stroke-width="4"/><path d="M274 143 Q312 101 295 75 Q257 81 243 120" fill="#f6d5e7" stroke="#b995c2" stroke-width="4"/>
+<!-- hair --> <path d="M133 126 Q130 77 173 91 Q197 61 220 91 Q267 78 269 131 Q238 112 218 120 Q181 105 153 133Z" fill="#a98acb"/>
+<!-- brows --> <path d="M139 139 Q157 128 174 140 M226 140 Q243 128 261 139" fill="none" stroke="#886b9d" stroke-width="5" stroke-linecap="round"/>
+<!-- eyes --> <g class="eye-open"><ellipse cx="162" cy="174" rx="22" ry="29" fill="#fff" stroke="#9d83ae" stroke-width="2"/><ellipse cx="238" cy="174" rx="22" ry="29" fill="#fff" stroke="#9d83ae" stroke-width="2"/><ellipse class="pupil" cx="165" cy="180" rx="11" ry="16" fill="#55466f"/><ellipse class="pupil" cx="235" cy="180" rx="11" ry="16" fill="#55466f"/><circle cx="169" cy="173" r="4" fill="white"/><circle cx="239" cy="173" r="4" fill="white"/></g>
+<g class="lid"><path d="M140 174 Q162 193 184 174 M216 174 Q238 193 260 174" fill="none" stroke="#886b9d" stroke-width="6" stroke-linecap="round"/></g>
+<ellipse cx="132" cy="208" rx="13" ry="7" fill="#f2a9c7" opacity=".7"/><ellipse cx="268" cy="208" rx="13" ry="7" fill="#f2a9c7" opacity=".7"/>
+<g class="mouth"><path d="M184 218 Q200 236 216 218" fill="none" stroke="#a66e8d" stroke-width="5" stroke-linecap="round"/></g><g class="sleep-mouth" opacity="0"><path d="M190 225 Q200 230 210 225" fill="none" stroke="#a66e8d" stroke-width="4" stroke-linecap="round"/></g>
+<!-- headphones --> <path d="M116 165 Q105 60 200 61 Q295 60 284 165" fill="none" stroke="#8b76c6" stroke-width="15"/><rect x="105" y="145" width="25" height="55" rx="12" fill="#ffb8d5" stroke="#8b76c6" stroke-width="4"/><rect x="270" y="145" width="25" height="55" rx="12" fill="#ffb8d5" stroke="#8b76c6" stroke-width="4"/><path d="M192 68 Q200 48 208 68" fill="none" stroke="#fff" stroke-width="4"/>
+</svg>`}
+function mountPet(el){el.innerHTML=petSVG()}
+mountPet($("#homePet"));mountPet($("#walker"));
+function renderWallet(){$("#hearts").textContent=data.hearts;$("#shopHearts").textContent=data.hearts}
+function renderHomeStats(){$("#statLessons").textContent=Object.keys(data.completed).length;let scores=Object.values(data.scores);$("#statBest").textContent=(scores.length?Math.max(...scores):0)+"%";$("#statItems").textContent=data.items.length;let n=Object.values(data.daily).filter(Boolean).length;$("#dailyProgress").style.width=(n/3*100)+"%";$("#dailyText").textContent=n+" из 3 добрых дел"}
+renderWallet();renderHomeStats();
+const subjects=[
+["math","➗","Математика","Дроби, умножение, периметр и задачи",[
+["Дроби вокруг нас","Какая дробь больше: 1/2 или 1/4?",["1/4","1/2","Они равны","Нельзя узнать"],1],
+["Дроби вокруг нас","Чему равны 3/4 от 20?",["12","15","16","18"],1],
+["Умножение","Сколько будет 24 × 3?",["62","68","72","74"],2],
+["Умножение","В коробке 6 рядов по 8 карандашей. Сколько всего?",["14","42","48","56"],2],
+["Периметр","Периметр квадрата со стороной 5 см равен…",["10 см","15 см","20 см","25 см"],2]]],
+["russian","✍️","Русский язык","Части речи, орфография, предложения",[
+["Части речи","Какое слово является именем прилагательным?",["Бежать","Солнечный","Быстро","Радость"],1],
+["Части речи","На какой вопрос отвечает наречие «весело»?",["Кто?","Какой?","Как?","Что делать?"],2],
+["Орфография","Выбери правильное написание:",["жыраф","жираф","жырафф","жераф"],1],
+["Предложение","Сколько грамматических основ в простом предложении?",["Ни одной","Одна","Две","Три"],1],
+["Состав слова","Какая часть слова стоит после корня и служит для образования слов?",["Приставка","Окончание","Суффикс","Основа"],2]]],
+["literature","📖","Литература","Герои, жанры, выразительное чтение",[
+["Жанры","К какому жанру относится произведение с волшебством и чудесами?",["Басня","Сказка","Рассказ о природе","Загадка"],1],
+["Басня","Кто обычно становится героем басни?",["Только короли","Животные с человеческими чертами","Космонавты","Роботы"],1],
+["Выразительность","Как называется образное определение: «золотая осень»?",["Эпитет","Рифма","Диалог","Заголовок"],0],
+["Стихи","Что помогает услышать ритм стихотворения?",["Рифма и размер","Только заглавные буквы","Количество героев","Обложка"],0],
+["Чтение","Что лучше сделать перед пересказом текста?",["Прочитать и выделить главное","Сразу закрыть книгу","Выучить последнюю строку","Посчитать страницы"],0]]],
+["english","🔤","Английский язык","Слова, грамматика и простые фразы",[
+["Vocabulary","Как переводится apple?",["Груша","Яблоко","Слива","Персик"],1],
+["To be","Выбери верное: She ___ my friend.",["am","are","is","be"],2],
+["Vocabulary","Как будет «собака» по-английски?",["Cat","Bird","Dog","Fish"],2],
+["Numbers","Какое число означает twelve?",["Десять","Одиннадцать","Двенадцать","Двадцать"],2],
+["Present Simple","Выбери верное: I ___ football.",["plays","play","playing","to plays"],1]]],
+["world","🌍","Окружающий мир","Природа, планета, человек и безопасность",[
+["Планета","Как называется планета, на которой мы живём?",["Марс","Земля","Венера","Юпитер"],1],
+["Природа","Что растения поглощают из воздуха при фотосинтезе?",["Кислород","Углекислый газ","Азот","Водород"],1],
+["Вода","При какой температуре вода замерзает (обычно)?",["0 °C","10 °C","50 °C","100 °C"],0],
+["Животные","Кто из этих животных — млекопитающее?",["Крокодил","Дельфин","Лягушка","Окунь"],1],
+["Безопасность","Что нужно сделать, если потерялся в магазине?",["Уйти на улицу","Обратиться к сотруднику магазина","Идти с незнакомцем","Спрятаться"],1]]],
+["arithmetic","🧮","Арифметика","Устный счёт, порядок действий, деление",[
+["Устный счёт","Сколько будет 125 + 75?",["180","190","200","210"],2],
+["Деление","Сколько будет 96 : 8?",["10","11","12","14"],2],
+["Порядок действий","Чему равно 6 + 4 × 2?",["20","14","16","12"],1],
+["Округление","Округли 347 до десятков.",["300","340","350","400"],2],
+["Задача","У Маши 4 пакета по 7 яблок. Сколько яблок?",["11","21","28","32"],2]]],
+["logic","🧩","Логика","Закономерности, сравнение, внимательность",[
+["Закономерность","Продолжи ряд: 2, 4, 6, 8, …",["9","10","11","12"],1],
+["Лишнее","Что лишнее: круг, квадрат, треугольник, яблоко?",["Круг","Квадрат","Треугольник","Яблоко"],3],
+["Сравнение","У Лены 3 сестры. У каждой сестры один брат. Сколько всего братьев у сестёр?",["1","3","4","6"],0],
+["Логика","Все розы — цветы. Некоторые цветы красные. Значит ли это, что все розы красные?",["Да","Нет, это не следует","Только летом","Всегда"],1],
+["Внимание","Какое число пропущено: 5, 10, 20, __, 80?",["25","30","40","60"],2]]],
+["iq","💡","IQ-лаборатория","Задачи на сообразительность и нестандартное мышление",[
+["Последовательность","Что дальше: ▲ ● ▲ ● ▲ …?",["▲","●","■","◆"],1],
+["Числа","У двух кошек по 4 лапы. Сколько лап у трёх кошек?",["8","10","12","14"],2],
+["Пространство","Сколько углов у двух квадратов вместе, если не накладывать их?",["4","6","8","10"],2],
+["Задачка","На ветке сидели 5 птиц. Одна улетела. Сколько осталось?",["4","5","6","0"],0],
+["Аналогия","Птица относится к гнезду, как пчела к…",["Норе","Улью","Берлоге","Конуре"],1]]]
 ];
-
-function loadTask() {
-    if(state.lessonTask >= 5) { 
-        alert('Урок пройден! +20 сердечек'); 
-        state.hearts += 20; state.lessonTask = 0; updateUI(); 
-    }
-    const task = TASKS[state.lessonTask];
-    
-    document.getElementById('ziti-dialog').innerText = "Внимательно прочитай задачу.";
-    document.getElementById('task-type').innerText = task.type;
-    document.getElementById('task-q').innerText = task.q;
-    document.getElementById('task-progress').innerText = `${state.lessonTask + 1}/5`;
-    document.getElementById('lesson-bar').style.width = `${(state.lessonTask/5)*100}%`;
-    
-    document.getElementById('answer-area').innerHTML = `
-        <input type="text" id="ans" placeholder="Твой ответ..." style="width:100%; padding:12px; border-radius:12px; border:2px solid var(--border); font-size:16px; margin-bottom:10px; text-align:center;">
-        <button class="btn" onclick="checkAns()">Отправить</button>
-    `;
+const lessonList=$("#lessonList");
+function renderLessons(){lessonList.innerHTML="";subjects.forEach((s,i)=>{let done=data.completed[s[0]];let d=document.createElement("div");d.className="lesson"+(done?" done":"");d.innerHTML=`<div class="section-head"><span class="emoji">${s[1]}</span><span class="tag">${done?"✓ Пройдено":"5 вопросов"}</span></div><h3>${s[2]}</h3><p>${s[3]}</p><button class="btn ${done?"mint":"primary"} small" data-sub="${s[0]}">${done?"Повторить урок":"Начать урок"} →</button>`;d.querySelector("button").onclick=()=>startQuiz(i);lessonList.append(d)})}
+renderLessons();
+let quiz={subject:null,questions:[],index:0,correct:0,locked:false};
+function startQuiz(i){let s=subjects[i];quiz={subject:s,questions:s[4],index:0,correct:0,locked:false};$("#quizSubject").textContent=s[2].toUpperCase();switchTab("quizPanel");showQuestion()}
+function showQuestion(){let q=quiz.questions[quiz.index];$("#quizProgress").style.width=(quiz.index/quiz.questions.length*100)+"%";$("#quizContent").innerHTML=`<span class="tag">ВОПРОС ${quiz.index+1} ИЗ ${quiz.questions.length}</span><div class="question">${q[0]}<br>${q[1]}</div><div class="answers">${q[2].map((a,i)=>`<button class="answer" data-a="${i}">${["А","Б","В","Г"][i]}. ${a}</button>`).join("")}</div><div class="feedback" id="feedback"></div><button class="btn primary hidden" id="nextQuestion">${quiz.index===4?"Завершить тест":"Следующий вопрос →"}</button>`;$$(".answer").forEach(b=>b.onclick=()=>answer(+b.dataset.a))}
+function answer(a){if(quiz.locked)return;quiz.locked=true;let q=quiz.questions[quiz.index],ok=a===q[3];if(ok)quiz.correct++;$$(".answer").forEach((b,i)=>{b.disabled=true;if(i===q[3])b.classList.add("correct");else if(i===a)b.classList.add("wrong")});$("#feedback").textContent=ok?"Верно! Умница! ✨":"Почти! Правильный ответ подсвечен 💜";$("#nextQuestion").classList.remove("hidden");}
+$("#quizContent").addEventListener("click",e=>{if(e.target.id==="nextQuestion"){quiz.index++;if(quiz.index<5){quiz.locked=false;showQuestion()}else finishQuiz()}});
+function finishQuiz(){let s=quiz.subject,score=Math.round(quiz.correct/5*100),old=data.scores[s[0]]||0;data.scores[s[0]]=Math.max(old,score);if(score>=60){if(!data.completed[s[0]]){data.completed[s[0]]=true;addHearts(10+Math.floor(quiz.correct/5*5))}else addHearts(Math.max(2,Math.floor(quiz.correct/2)))}else toast("Ты старалась! Попробуй ещё раз 💗");data.daily.lesson=true;save();$("#quizContent").innerHTML=`<div style="text-align:center;padding:30px 5px"><div style="font-size:60px">${score>=80?"🏆":score>=60?"🌟":"🌱"}</div><h2>${score>=80?"Великолепно!":score>=60?"Отличная работа!":"Продолжай тренироваться!"}</h2><p class="sub">Правильных ответов: ${quiz.correct} из 5 (${score}%).</p><p>${score>=60?"Ты получила награду за старание!":"Каждая попытка делает тебя сильнее."}</p><button class="btn primary" id="backLessons">К урокам</button></div>`;$("#quizProgress").style.width="100%";$("#backLessons").onclick=()=>{renderLessons();switchTab("lessons")};renderLessons()}
+$("#quitQuiz").onclick=()=>switchTab("lessons");$("#startLesson").onclick=()=>switchTab("lessons");$("#callIzi").onclick=()=>{switchTab("pet");sayPet("Я здесь! Давай поболтаем 💜")};
+function petSay(t){$("#petBubble").textContent=t;let svg=$("#walker svg");if(svg){svg.classList.remove("sleep");svg.classList.add("walk");setTimeout(()=>svg.classList.remove("walk"),1000)}}
+function updatePet(){let p=data.pet;["hunger","mood","energy"].forEach(k=>{$("#"+k+"Val").textContent=p[k]+"%";$("#"+k+"Bar").style.width=p[k]+"%"});$("#petMoodText").textContent=p.sleep?"Спит 😴":p.mood>70?"Счастлив(а) 😊":p.mood>35?"Немного грустит":"Нужна забота";let svg=$("#walker svg");if(svg)svg.classList.toggle("sleep",p.sleep)}
+function petAction(action){let p=data.pet;if(action==="feed"){if(p.hunger>=96){toast("iZi уже сыта!");return}if(data.hearts<2){toast("Нужно 2 сердечка на угощение");return}data.hearts-=2;p.hunger=Math.min(100,p.hunger+25);p.mood=Math.min(100,p.mood+5);petSay("Ням-ням! Спасибо за вкусняшку 🍓");let svg=$("#walker svg");svg?.classList.add("blink");setTimeout(()=>svg?.classList.remove("blink"),900)}if(action==="play"){p.mood=Math.min(100,p.mood+22);p.energy=Math.max(0,p.energy-18);p.hunger=Math.max(0,p.hunger-8);petSay("Ура! Как весело играть вместе! 🪁")}if(action==="sleep"){p.sleep=true;p.energy=Math.min(100,p.energy+35);petSay("Спокойной ночи… Z-z-z 🌙")}if(action==="wake"){p.sleep=false;petSay("Доброе утро! Я готов(а) к приключениям ☀️")}data.daily.pet=true;save();updatePet()}
+$("#feedPet").onclick=()=>petAction("feed");$("#playPet").onclick=()=>petAction("play");$("#sleepPet").onclick=()=>petAction("sleep");$("#wakePet").onclick=()=>petAction("wake");updatePet();
+setInterval(()=>{if(!data.pet.sleep){data.pet.hunger=Math.max(0,data.pet.hunger-1);data.pet.energy=Math.max(0,data.pet.energy-1)}else data.pet.energy=Math.min(100,data.pet.energy+2);if(data.pet.hunger<25)data.pet.mood=Math.max(0,data.pet.mood-1);save();updatePet()},60000);
+let walkX=35;setInterval(()=>{walkX=walkX>65?15:walkX+10;$("#walker").style.left=walkX+"%"},5200);
+function sayPet(t){let log=$("#chatLog");let row=document.createElement("div");row.className="msg";row.innerHTML="<b>iZi:</b> "+escapeHTML(t);log.append(row);log.scrollTop=log.scrollHeight;if("speechSynthesis"in window){speechSynthesis.cancel();let u=new SpeechSynthesisUtterance(t);u.lang="ru-RU";u.rate=.95;speechSynthesis.speak(u)}}
+function escapeHTML(s){return String(s).replace(/[&<>"']/g,c=>({"&":"&amp;","<":"&lt;",">":"&gt;",'"':"&quot;","'":"&#39;"}[c]))}
+$("#chatForm").onsubmit=async e=>{e.preventDefault();let input=$("#chatInput"),message=input.value.trim();if(!message)return;input.value="";let log=$("#chatLog");let user=document.createElement("div");user.className="msg";user.innerHTML="<b>Ты:</b> "+escapeHTML(message);log.append(user);let pending=document.createElement("div");pending.className="msg";pending.textContent="iZi печатает…";log.append(pending);log.scrollTop=log.scrollHeight;try{let res=await fetch("https://wispy-pond-9c0b.zadeakber.workers.dev",{method:"POST",headers:{"Content-Type":"application/json"},body:JSON.stringify({message})});if(!res.ok)throw Error("HTTP "+res.status);let body=await res.json();if(typeof body.reply!=="string")throw Error("Некорректный ответ");pending.remove();sayPet(body.reply)}catch(err){pending.textContent="Не получилось связаться с сервером. Проверь интернет и попробуй ещё раз 💗";console.warn(err)}};
+const products=[["hat","👒","Шляпка-ромашка",15,"hat"],["glasses","🤓","Умные очки",12,"glasses"],["crown","👑","Корона мечты",25,"hat"],["berry","🍓","Клубничка",2,"food"],["cookie","🍪","Печенька",3,"food"],["milk","🥛","Молочко",4,"food"]];
+function renderShop(){let root=$("#shopList");root.innerHTML="";products.forEach(p=>{let owned=data.items.includes(p[0]);let d=document.createElement("div");d.className="shop-item";d.innerHTML=`<div class="art">${p[1]}</div><b>${p[2]}</b><p class="sub">${p[3]} 💗</p><button class="btn small ${owned?"mint":"primary"}">${owned?"Куплено":p[4]==="food"?"Купить":"Надеть / купить"}</button>`;d.querySelector("button").onclick=()=>{if(p[4]==="food"){if(data.hearts<p[3])return toast("Не хватает сердечек");data.hearts-=p[3];data.pet.hunger=Math.min(100,data.pet.hunger+22);data.pet.mood=Math.min(100,data.pet.mood+4);petSay("Какое вкусное угощение! 😋");save();updatePet();return}if(owned)return toast("Этот аксессуар уже у iZi 💜");if(data.hearts<p[3])return toast("Не хватает сердечек");data.hearts-=p[3];data.items.push(p[0]);save();renderShop();toast("Покупка отправлена в гардероб! 🎀")};root.append(d)})}
+$("#closeGame").onclick=()=>$("#gameWrap").classList.add("hidden");
+let gameState={type:null,score:0,raf:0,items:[],time:0,active:false,round:0,matched:[],cards:[],first:null,lock:false};
+function setGameScore(){ $("#gameScore").textContent="Счёт: "+gameState.score}
+function gameEnd(msg){gameState.active=false;cancelAnimationFrame(gameState.raf);$("#gameHelp").textContent=msg;$("#restartGame").classList.remove("hidden");if(gameState.score>=5){data.games++;data.daily.game=true;addHearts(Math.min(5,Math.floor(gameState.score/5)));save()}else{data.games++;data.daily.game=true;save()}}
+function startGame(type){$("#gameWrap").classList.remove("hidden");$("#restartGame").classList.add("hidden");gameState={type,score:0,items:[],time:0,active:true,round:0,matched:[],cards:[],first:null,lock:false};setGameScore();let c=$("#gameCanvas"),ctx=c.getContext("2d");ctx.clearRect(0,0,c.width,c.height);
+if(type==="stars"){ $("#gameTitle").textContent="Лови звёздочки 🌟";$("#gameHelp").textContent="Нажимай на звёзды, пока они не улетели! Собери 10.";gameState.items=Array.from({length:9},()=>({x:Math.random()*680+20,y:Math.random()*260+20,r:13+Math.random()*9,life:0}));animateStars()}
+if(type==="math"){ $("#gameTitle").textContent="Воздушный счёт 🎈";newMathRound()}
+if(type==="memory"){ $("#gameTitle").textContent="Пары сокровищ 💎";$("#gameHelp").textContent="Открывай карточки и найди 4 пары.";gameState.cards=["🌈","🍓","🐱","⭐","🌈","🍓","🐱","⭐"].sort(()=>Math.random()-.5).map((v,i)=>({v,i,open:false,done:false}));drawMemory()}
 }
-
-function askTeacher() {
-    const task = TASKS[state.lessonTask];
-    document.getElementById('ziti-dialog').innerText = "Подсказка: " + task.hint;
-}
-
-function checkAns() {
-    const task = TASKS[state.lessonTask];
-    const val = document.getElementById('ans').value.trim().toLowerCase();
-    if(val === task.a.toLowerCase()) {
-        state.hearts += 10; state.solved++; state.lessonTask++;
-        updateUI();
-        if(window.confetti) confetti({ particleCount: 50, spread: 60 });
-        loadTask();
-    } else {
-        document.getElementById('ziti-dialog').innerText = "Почти! Попробуй еще раз или нажми 'Я не знаю'.";
-    }
-}
-
-// --- UI ---
-function updateUI() {
-    document.getElementById('hearts').innerText = state.hearts;
-    document.getElementById('val-hunger').innerText = Math.round(state.pet.hunger) + '%';
-    document.getElementById('bar-hunger').style.width = state.pet.hunger + '%';
-    document.getElementById('val-mood').innerText = Math.round(state.pet.mood) + '%';
-    document.getElementById('bar-mood').style.width = state.pet.mood + '%';
-    document.getElementById('val-energy').innerText = Math.round(state.pet.energy) + '%';
-    document.getElementById('bar-energy').style.width = state.pet.energy + '%';
-
-    document.getElementById('btn-freeze').innerText = state.pet.ignore ? 'Можно играть' : 'Не отвлекай';
-    document.getElementById('btn-sleep').innerText = state.pet.isSleeping ? 'Разбудить ☀️' : 'Спать 😴';
-    document.getElementById('zzz-text').style.display = state.pet.isSleeping ? 'block' : 'none';
-}
-</script><script>
-// --- СБОРКА ПИТОМЦА ИЗ SVG ---
-async function initPet() {
-    try {
-        const res = await fetch('./manifest.json');
-        manifest = await res.json();
-        buildPetDOM();
-        startPetLoop();
-    } catch(e) { console.error("Ошибка загрузки манифеста", e); }
-}
-
-function createImg(id) {
-    const p = manifest.parts.find(x => x.id === id);
-    if(!p) return '';
-    return `<image href="${p.file}" x="${-p.pivot[0]}" y="${-p.pivot[1]}" width="${p.size[0]}" height="${p.size[1]}" />`;
-}
-
-function buildPetDOM() {
-    const wrapper = document.getElementById('pet-svg-wrapper');
-    
-    let mouth = state.pet.mouth ? state.pet.mouth : (state.pet.hunger < 30 ? "15_mouth_sad" : "13_mouth_smile");
-    
-    // Формируем глаза
-    let eyeL = createImg("03_eye_left") + createImg("05_pupil_left");
-    let eyeR = createImg("04_eye_right") + createImg("06_pupil_right");
-    if (state.pet.isSleeping) {
-        eyeL = createImg("07_lid_left");
-        eyeR = createImg("08_lid_right");
-    }
-
-    wrapper.innerHTML = `
-    <svg viewBox="0 0 400 520">
-        <!-- Рюкзак -->
-        <g transform="translate(200, 345)">${createImg("19_backpack")}</g>
-        
-        <!-- Ноги -->
-        <g id="leg-l" style="transform-origin: 176px 408px;">
-            <g transform="translate(176, 408)">
-                ${createImg("26_thigh_left")}
-                <g transform="translate(0, 36)">${createImg("27_shin_left")}</g>
-                <g transform="translate(0, 72)">${createImg("28_foot_left")}</g>
-            </g>
-        </g>
-        <g id="leg-r" style="transform-origin: 224px 408px;">
-            <g transform="translate(224, 408)">
-                ${createImg("29_thigh_right")}
-                <g transform="translate(0, 36)">${createImg("30_shin_right")}</g>
-                <g transform="translate(0, 72)">${createImg("31_foot_right")}</g>
-            </g>
-        </g>
-
-        <!-- Тело -->
-        <g transform="translate(200, 330)">${createImg("17_body")}</g>
-        <g transform="translate(200, 330)">${createImg("18_vest")}</g>
-
-        <!-- Руки -->
-        <g id="arm-l" style="transform-origin: 142px 296px;">
-            <g transform="translate(142, 296)">
-                ${createImg("20_shoulder_left")}
-                <g transform="translate(0, 36)">${createImg("21_forearm_left")}</g>
-                <g transform="translate(0, 70)">${createImg("22_hand_left")}</g>
-            </g>
-        </g>
-        <g id="arm-r" style="transform-origin: 258px 296px;">
-            <g transform="translate(258, 296)">
-                ${createImg("23_shoulder_right")}
-                <g transform="translate(0, 36)">${createImg("24_forearm_right")}</g>
-                <g transform="translate(0, 70)">${createImg("25_hand_right")}</g>
-            </g>
-        </g>
-
-        <!-- Голова -->
-        <g transform="translate(200, 170)">${createImg("01_head")}</g>
-        <g transform="translate(200, 160)">${createImg("09_headphones")}</g>
-        <g transform="translate(200, 96)">${createImg("02_hair")}</g>
-        
-        <!-- Брови -->
-        <g transform="translate(162, 128)">${createImg("10_brow_left")}</g>
-        <g transform="translate(238, 128)">${createImg("11_brow_right")}</g>
-        
-        <!-- Левый Глаз -->
-        <g transform="translate(162, 168)">${eyeL}</g>
-        
-        <!-- Правый Глаз -->
-        <g transform="translate(238, 168)">${eyeR}</g>
-
-        <!-- Рот -->
-        <g transform="translate(200, 208)">${createImg(mouth)}</g>
-    </svg>`;
-}
-</script><script>
-// --- ДВИЖОК ЖИЗНИ (FSM) ---
-function startPetLoop() {
-    const container = document.getElementById('pet-container');
-    const legL = document.getElementById('leg-l');
-    const legR = document.getElementById('leg-r');
-    const armL = document.getElementById('arm-l');
-    const armR = document.getElementById('arm-r');
-
-    setInterval(() => {
-        if(state.pet.isSleeping || state.pet.ignore) { petState = 'idle'; return; }
-        if(Math.random() < 0.6) petState = 'walking';
-        else petState = 'idle';
-        if(petState === 'walking') dir = Math.random() > 0.5 ? 1 : -1;
-    }, 3000);
-
-    function loop() {
-        animTime += 0.1;
-        container.style.transform = `translateX(${petX}px) scaleX(${dir})`;
-        
-        if(petState === 'walking' && !state.pet.ignore && !state.pet.isSleeping) {
-            petX += dir * 2;
-            if(petX > window.innerWidth - 150) { petX = window.innerWidth - 150; dir = -1; }
-            if(petX < 10) { petX = 10; dir = 1; }
-            
-            const swing = Math.sin(animTime * 8) * 20;
-            legL.style.transform = `rotate(${swing}deg)`;
-            legR.style.transform = `rotate(${-swing}deg)`;
-            armL.style.transform = `rotate(${-swing}deg)`;
-            armR.style.transform = `rotate(${swing}deg)`;
-        } else {
-            legL.style.transform = `rotate(0deg)`; legR.style.transform = `rotate(0deg)`;
-            armL.style.transform = `rotate(0deg)`; armR.style.transform = `rotate(0deg)`;
-        }
-        requestAnimationFrame(loop);
-    }
-    loop();
-}
-
-// --- ДЕЙСТВИЯ С ПИТОМЦЕМ ---
-function feedPet() {
-    if(state.hearts < 10) return alert('Нужно больше сердечек!');
-    if(state.pet.isSleeping) return alert('Питомец спит.');
-    state.hearts -= 10;
-    state.pet.hunger = Math.min(100, state.pet.hunger + 30);
-    state.pet.mouth = '14_mouth_open';
-    updateUI(); buildPetDOM();
-    setTimeout(() => { state.pet.mouth = null; buildPetDOM(); }, 1000);
-}
-
-function playPet() {
-    if(state.hearts < 5) return alert('Нужно больше сердечек!');
-    if(state.pet.energy < 15) return alert('Питомец устал.');
-    state.hearts -= 5;
-    state.pet.mood = Math.min(100, state.pet.mood + 20);
-    state.pet.energy = Math.max(0, state.pet.energy - 15);
-    updateUI();
-}
-
-function callPet() {
-    if(state.pet.isSleeping) return alert('Питомец спит.');
-    petX = window.innerWidth / 2 - 70;
-    petState = 'idle';
-}
-
-function freezePet() {
-    state.pet.ignore = !state.pet.ignore;
-    updateUI();
-}
-
-function sleepPet() {
-    state.pet.isSleeping = !state.pet.isSleeping;
-    if(state.pet.isSleeping) {
-        let sleepInt = setInterval(() => {
-            state.pet.energy = Math.min(100, state.pet.energy + 10);
-            updateUI();
-            if(!state.pet.isSleeping || state.pet.energy >= 100) clearInterval(sleepInt);
-        }, 3000);
-    }
-    updateUI(); buildPetDOM();
-}
-</script><script>
-// --- ИГРА 1: ПОЙМАЙ ЯБЛОЧКО ---
-let isPlaying = false, score = 0, basketPos = 50;
-function startGame() {
-    if(state.pet.energy < 15) return alert('Питомец устал!');
-    state.pet.energy -= 15; updateUI();
-    isPlaying = true; score = 0;
-    document.getElementById('score').innerText = score;
-    document.getElementById('game-area').style.display = 'block';
-    
-    const area = document.getElementById('game-area');
-    const basket = document.getElementById('basket');
-    
-    area.onmousemove = (e) => { basketPos = e.clientX - area.getBoundingClientRect().left; basket.style.left = basketPos + 'px'; };
-    area.ontouchmove = (e) => { basketPos = e.touches[0].clientX - area.getBoundingClientRect().left; basket.style.left = basketPos + 'px'; };
-
-    let appleLoop = setInterval(() => {
-        if(!isPlaying) { clearInterval(appleLoop); return; }
-        const apple = document.createElement('div');
-        apple.className = 'apple'; apple.innerText = '🍎';
-        const x = Math.random() * (area.clientWidth - 30);
-        apple.style.left = x + 'px'; apple.style.top = '-30px';
-        area.appendChild(apple);
-        
-        let y = -30;
-        const fall = setInterval(() => {
-            y += 6; apple.style.top = y + 'px';
-            if(y > area.clientHeight - 50) {
-                clearInterval(fall);
-                if(Math.abs(x + 15 - basketPos) < 40) {
-                    score++; document.getElementById('score').innerText = score;
-                    if(score >= 10) endGame();
-                }
-                apple.remove();
-            }
-        }, 30);
-    }, 800);
-}
-
-function endGame() {
-    isPlaying = false;
-    document.getElementById('game-area').style.display = 'none';
-    state.hearts += 5;
-    state.pet.mood = Math.min(100, state.pet.mood + 10);
-    updateUI();
-    alert('Молодец! +5 сердечек!');
-}
-
-// --- ИГРА 2: НАЙДИ ПАРУ ---
-const memoryIcons = ['🐶', '🐱', '🐭', '🐹', '🐰', '🦊', '🐻', '🐼'];
-let memoryCards = [];
-let flippedCards = [];
-let matchedPairs = 0;
-let lockBoard = false;
-
-function initMemoryGame() {
-    memoryCards = [...memoryIcons, ...memoryIcons].sort(() => 0.5 - Math.random());
-    flippedCards = [];
-    matchedPairs = 0;
-    lockBoard = false;
-    
-    const grid = document.getElementById('memory-grid');
-    grid.innerHTML = '';
-    
-    memoryCards.forEach((icon, index) => {
-        const card = document.createElement('div');
-        card.className = 'memory-card';
-        card.dataset.icon = icon;
-        card.dataset.index = index;
-        card.innerText = icon;
-        card.onclick = () => flipCard(card);
-        grid.appendChild(card);
-    });
-}
-
-function flipCard(card) {
-    if (lockBoard) return;
-    if (card.classList.contains('flipped') || card.classList.contains('matched')) return;
-    
-    card.classList.add('flipped');
-    flippedCards.push(card);
-    
-    if (flippedCards.length === 2) {
-        lockBoard = true;
-        const [card1, card2] = flippedCards;
-        
-        if (card1.dataset.icon === card2.dataset.icon) {
-            card1.classList.add('matched');
-            card2.classList.add('matched');
-            flippedCards = [];
-            matchedPairs++;
-            lockBoard = false;
-            
-            if (matchedPairs === 8) {
-                state.hearts += 10;
-                state.pet.mood = Math.min(100, state.pet.mood + 10);
-                updateUI();
-                setTimeout(() => alert('Ура! Все пары найдены! +10 сердечек'), 300);
-            }
-        } else {
-            setTimeout(() => {
-                card1.classList.remove('flipped');
-                card2.classList.remove('flipped');
-                flippedCards = [];
-                lockBoard = false;
-            }, 1000);
-        }
-    }
-}
-</script><script>
-// --- СОХРАНЕНИЕ ПРОГРЕССА (LOCALSTORAGE) ---
-function saveProgress() {
-    localStorage.setItem('maryashino_save_v1', JSON.stringify(state));
-}
-
-// Переопределяем updateUI, чтобы он сохранял прогресс при каждом обновлении
-const originalUpdateUI = updateUI;
-updateUI = function() {
-    originalUpdateUI();
-    saveProgress();
-};
-
-// Загрузка прогресса при старте
-function loadProgress() {
-    const saved = localStorage.getItem('maryashino_save_v1');
-    if (saved) {
-        try {
-            const parsed = JSON.parse(saved);
-            // Объединяем сохраненные данные с текущим состоянием
-            Object.assign(state, parsed);
-            // Восстанавливаем вложенный объект питомца
-            if (parsed.pet) Object.assign(state.pet, parsed.pet);
-        } catch(e) { console.error("Ошибка загрузки прогресса", e); }
-    }
-}
-
-// --- ДЕТЕКТОР ХАЛТУРЫ ---
-let lastAnswerTime = 0;
-const originalCheckAns = checkAns;
-
-checkAns = function() {
-    const task = TASKS[state.lessonTask];
-    const val = document.getElementById('ans').value.trim().toLowerCase();
-    const now = Date.now();
-    
-    // Если ответ дан быстрее, чем за 1.5 секунды, и он неверный - это тык пальцем
-    if (now - lastAnswerTime < 1500 && val !== task.a.toLowerCase()) {
-        document.getElementById('ziti-dialog').innerText = "Не спеши! Прочитай задачу внимательно. Я подожду.";
-        return; // Не засчитываем попытку
-    }
-    
-    lastAnswerTime = now;
-
-    if(val === task.a.toLowerCase()) {
-        state.hearts += 10; 
-        state.solved++; 
-        state.lessonTask++;
-        
-        if (state.lessonTask % 5 === 0 && state.lessonTask > 0) {
-            state.hearts += 20;
-            state.lessonTask = 0;
-            if(window.confetti) confetti({ particleCount: 100, spread: 90 });
-            setTimeout(() => alert('Урок пройден! Бонус +20 сердечек! 🎉'), 500);
-        }
-        
-        updateUI(); // Вызовет сохранение
-        if(window.confetti) confetti({ particleCount: 50, spread: 60 });
-        loadTask();
-    } else {
-        document.getElementById('ziti-dialog').innerText = "Почти! Попробуй еще раз или нажми 'Я не знаю'.";
-    }
-};
-</script><script>
-// --- ФИНАЛЬНЫЙ ЗАПУСК ---
-// Переопределяем функцию сброса, чтобы она очищала LocalStorage
-function resetProgress() {
-    if(confirm('Вы уверены, что хотите сбросить весь прогресс? Все сердечки и достижения будут удалены.')) {
-        localStorage.removeItem('maryashino_save_v1'); // Удаляем сохранение
-        location.reload(); // Перезагружаем страницу
-    }
-}
-
-// Переопределяем authParent, чтобы он показывал актуальную статистику
-function authParent() {
-    if(document.getElementById('pin').value === '1234') {
-        document.getElementById('parent-stats').style.display = 'block';
-        document.getElementById('stat-solved').innerText = state.solved;
-    } else {
-        alert('Неверный PIN');
-    }
-}
-
-// --- ЭФФЕКТ ПРИЗРАКА (Финальная версия) ---
-// Питомец становится прозрачным при наведении на любые кликабельные элементы
-document.addEventListener('mouseover', e => {
-    if(e.target.closest('button, input, .nav-btn, .memory-card, .btn')) {
-        document.body.classList.add('hover-ui');
-    }
-});
-
-document.addEventListener('mouseout', e => {
-    if(e.target.closest('button, input, .nav-btn, .memory-card, .btn')) {
-        document.body.classList.remove('hover-ui');
-    }
-});
-
-// --- СТАРТ ВСЕГО ПРИЛОЖЕНИЯ ---
-window.addEventListener('load', () => {
-    // 1. Сначала загружаем сохраненный прогресс
-    loadProgress(); 
-    
-    // 2. Инициализируем питомца (загружаем SVG)
-    initPet();
-    
-    // 3. Обновляем интерфейс (сердечки, шкалы)
-    updateUI();
-    
-    // 4. Загружаем первую задачу
-    loadTask();
-    
-    // 5. Инициализируем сетку памяти
-    initMemoryGame();
-});
-</script><script>
-// --- ФИКС ЗРАЧКОВ ПИТОМЦА ---
-// Перехватываем оригинальную функцию сборки питомца
-const originalBuildPetDOM = buildPetDOM;
-
-buildPetDOM = function() {
-    // Вызываем оригинальную сборку
-    originalBuildPetDOM();
-    
-    // Теперь аккуратно добавляем зрачки поверх глаз
-    if (manifest && !state.pet.isSleeping) {
-        const svg = document.querySelector('#pet-svg-wrapper svg');
-        if (svg) {
-            // Левый зрачок (05_pupil_left)
-            const pupilLPart = manifest.parts.find(x => x.id === "05_pupil_left");
-            if (pupilLPart) {
-                const gL = document.createElementNS("http://www.w3.org/2000/svg", "g");
-                // Центр белка левого глаза (162, 168), зрачок крепится по своему pivot
-                gL.setAttribute("transform", `translate(165, 172)`); 
-                const imgL = document.createElementNS("http://www.w3.org/2000/svg", "image");
-                imgL.setAttribute("href", pupilLPart.file);
-                imgL.setAttribute("x", -pupilLPart.pivot[0]);
-                imgL.setAttribute("y", -pupilLPart.pivot[1]);
-                imgL.setAttribute("width", pupilLPart.size[0]);
-                imgL.setAttribute("height", pupilLPart.size[1]);
-                gL.appendChild(imgL);
-                svg.appendChild(gL);
-            }
-
-            // Правый зрачок (06_pupil_right)
-            const pupilRPart = manifest.parts.find(x => x.id === "06_pupil_right");
-            if (pupilRPart) {
-                const gR = document.createElementNS("http://www.w3.org/2000/svg", "g");
-                // Центр белка правого глаза (238, 168)
-                gR.setAttribute("transform", `translate(235, 172)`);
-                const imgR = document.createElementNS("http://www.w3.org/2000/svg", "image");
-                imgR.setAttribute("href", pupilRPart.file);
-                imgR.setAttribute("x", -pupilRPart.pivot[0]);
-                imgR.setAttribute("y", -pupilRPart.pivot[1]);
-                imgR.setAttribute("width", pupilRPart.size[0]);
-                imgR.setAttribute("height", pupilRPart.size[1]);
-                gR.appendChild(imgR);
-                svg.appendChild(gR);
-            }
-        }
-    }
-};
-
-// Пересобираем питомца сразу после загрузки, чтобы зрачки появились
-setTimeout(() => {
-    if (manifest) buildPetDOM();
-}, 500);
-</script><script>
-// ==========================================
-// ФИНАЛЬНЫЙ ПАТЧ: ЗРАЧКИ, РЕАКЦИИ И ХОДЬБА
-// ==========================================
-
-// 1. ФИКС ЗРАЧКОВ
-const originalBuildPetDOM = buildPetDOM;
-buildPetDOM = function() {
-    originalBuildPetDOM();
-    if (manifest && !state.pet.isSleeping) {
-        const svg = document.querySelector('#pet-svg-wrapper svg');
-        if (svg) {
-            // Левый зрачок
-            const pupilL = manifest.parts.find(x => x.id === "05_pupil_left");
-            if (pupilL) {
-                const gL = document.createElementNS("http://www.w3.org/2000/svg", "g");
-                gL.setAttribute("transform", `translate(165, 172)`); 
-                gL.innerHTML = `<image href="${pupilL.file}" x="${-pupilL.pivot[0]}" y="${-pupilL.pivot[1]}" width="${pupilL.size[0]}" height="${pupilL.size[1]}" />`;
-                svg.appendChild(gL);
-            }
-            // Правый зрачок
-            const pupilR = manifest.parts.find(x => x.id === "06_pupil_right");
-            if (pupilR) {
-                const gR = document.createElementNS("http://www.w3.org/2000/svg", "g");
-                gR.setAttribute("transform", `translate(235, 172)`);
-                gR.innerHTML = `<image href="${pupilR.file}" x="${-pupilR.pivot[0]}" y="${-pupilR.pivot[1]}" width="${pupilR.size[0]}" height="${pupilR.size[1]}" />`;
-                svg.appendChild(gR);
-            }
-        }
-    }
-};
-
-// 2. ФИКС РЕАКЦИЙ НА КНОПКИ (РОТ И ГЛАЗА)
-const originalFeedPet = feedPet;
-feedPet = function() {
-    if(state.hearts < 10) return alert('Нужно больше сердечек!');
-    if(state.pet.isSleeping) return alert('Питомец спит.');
-    
-    state.hearts -= 10;
-    state.pet.hunger = Math.min(100, state.pet.hunger + 30);
-    state.pet.mouth = '14_mouth_open'; // Открываем рот
-    updateUI(); 
-    buildPetDOM(); // Пересобираем, чтобы рот появился
-    
-    setTimeout(() => { 
-        state.pet.mouth = null; 
-        buildPetDOM(); // Возвращаем обычный рот
-    }, 1500);
-};
-
-const originalSleepPet = sleepPet;
-sleepPet = function() {
-    state.pet.isSleeping = !state.pet.isSleeping;
-    
-    if(state.pet.isSleeping) {
-        // Логика восстановления энергии
-        if(window.sleepInt) clearInterval(window.sleepInt);
-        window.sleepInt = setInterval(() => {
-            state.pet.energy = Math.min(100, state.pet.energy + 10);
-            updateUI();
-            if(!state.pet.isSleeping || state.pet.energy >= 100) clearInterval(window.sleepInt);
-        }, 3000);
-    }
-    updateUI(); 
-    buildPetDOM(); // Пересобираем, чтобы закрылись глаза
-};
-
-// 3. ОПТИМИЗАЦИЯ ДВИЖКА ХОДЬБЫ (Чтобы не жрал батарею)
-// Останавливаем старый тяжелый цикл
-petState = 'idle'; 
-// Запускаем новый облегченный цикл
-setInterval(() => {
-    const container = document.getElementById('pet-container');
-    const legL = document.getElementById('leg-l');
-    const legR = document.getElementById('leg-r');
-    const armL = document.getElementById('arm-l');
-    const armR = document.getElementById('arm-r');
-    
-    if (!container || !legL) return; // Защита, если DOM еще не готов
-
-    // Логика смены состояний
-    if(Math.random() < 0.05) {
-        if(state.pet.isSleeping || state.pet.ignore) petState = 'idle';
-        else {
-            petState = Math.random() < 0.6 ? 'walking' : 'idle';
-            if(petState === 'walking') dir = Math.random() > 0.5 ? 1 : -1;
-        }
-    }
-
-    // Движение
-    if(petState === 'walking' && !state.pet.ignore && !state.pet.isSleeping) {
-        petX += dir * 2;
-        if(petX > window.innerWidth - 150) { petX = window.innerWidth - 150; dir = -1; }
-        if(petX < 10) { petX = 10; dir = 1; }
-        container.style.transform = `translateX(${petX}px) scaleX(${dir})`;
-        
-        // Анимация лапок (через CSS transition)
-        legL.style.transform = `rotate(${Math.sin(Date.now() / 100) * 20}deg)`;
-        legR.style.transform = `rotate(${-Math.sin(Date.now() / 100) * 20}deg)`;
-        armL.style.transform = `rotate(${-Math.sin(Date.now() / 100) * 20}deg)`;
-        armR.style.transform = `rotate(${Math.sin(Date.now() / 100) * 20}deg)`;
-    } else {
-        legL.style.transform = `rotate(0deg)`;
-        legR.style.transform = `rotate(0deg)`;
-        armL.style.transform = `rotate(0deg)`;
-        armR.style.transform = `rotate(0deg)`;
-    }
-}, 50); // 50мс = плавно и не грузит телефон
-
-// Пересобираем питомца при старте, чтобы применить фиксы
-setTimeout(() => { if(manifest) buildPetDOM(); }, 1000);
-</script><script>
-// --- ЭТАП 7: 2.5D ЭФФЕКТ (ОБЪЕМ) И ФИКС ЗРАЧКОВ ---
-// Перехватываем функцию сборки питомца
-const originalBuildPetDOM_2 = buildPetDOM;
-
-buildPetDOM = function() {
-    originalBuildPetDOM_2();
-    
-    const svg = document.querySelector('#pet-svg-wrapper svg');
-    if (!svg) return;
-
-    // 1. ДОБАВЛЯЕМ SVG-ФИЛЬТРЫ ДЛЯ 2.5D (ТЕНИ)
-    let defs = svg.querySelector('defs');
-    if (!defs) {
-        defs = document.createElementNS("http://www.w3.org/2000/svg", "defs");
-        defs.innerHTML = `
-            <filter id="shadow-soft" x="-20%" y="-20%" width="140%" height="140%">
-                <feDropShadow dx="0" dy="4" stdDeviation="3" flood-color="#000" flood-opacity="0.15"/>
-            </filter>
-            <filter id="shadow-strong" x="-20%" y="-20%" width="140%" height="140%">
-                <feDropShadow dx="0" dy="6" stdDeviation="4" flood-color="#000" flood-opacity="0.25"/>
-            </filter>
-        `;
-        svg.prepend(defs);
-    }
-
-    // Применяем фильтры к группам. 
-    // ВАЖНО: Мы ищем группы по их ID или порядку. 
-    // Рюкзак (сзади) - легкая тень
-    const backpackG = svg.querySelectorAll('g')[0]; 
-    if (backpackG) backpackG.setAttribute('filter', 'url(#shadow-soft)');
-    
-    // Тело - легкая тень
-    const bodyG = svg.querySelectorAll('g')[7]; 
-    if (bodyG) bodyG.setAttribute('filter', 'url(#shadow-soft)');
-
-    // Голова - тень посильнее (чтобы выделялась)
-    const headG = svg.querySelectorAll('g')[10]; 
-    if (headG) headG.setAttribute('filter', 'url(#shadow-strong)');
-
-    // 2. ЗРАЧКИ (Чтобы глаза были "живыми")
-    if (manifest && !state.pet.isSleeping) {
-        // Левый зрачок
-        const pupilL = manifest.parts.find(x => x.id === "05_pupil_left");
-        if (pupilL) {
-            const gL = document.createElementNS("http://www.w3.org/2000/svg", "g");
-            gL.setAttribute("transform", `translate(165, 172)`); 
-            gL.innerHTML = `<image href="${pupilL.file}" x="${-pupilL.pivot[0]}" y="${-pupilL.pivot[1]}" width="${pupilL.size[0]}" height="${pupilL.size[1]}" />`;
-            svg.appendChild(gL);
-        }
-        // Правый зрачок
-        const pupilR = manifest.parts.find(x => x.id === "06_pupil_right");
-        if (pupilR) {
-            const gR = document.createElementNS("http://www.w3.org/2000/svg", "g");
-            gR.setAttribute("transform", `translate(235, 172)`);
-            gR.innerHTML = `<image href="${pupilR.file}" x="${-pupilR.pivot[0]}" y="${-pupilR.pivot[1]}" width="${pupilR.size[0]}" height="${pupilR.size[1]}" />`;
-            svg.appendChild(gR);
-        }
-    }
-};
-
-// Пересобираем питомца сразу после загрузки страницы, чтобы применить тени и зрачки
-setTimeout(() => { if(manifest) buildPetDOM(); }, 1000);
-</script><script>
-// ==========================================
-// ФИНАЛЬНЫЙ ПАТЧ: 2.5D, ЗРАЧКИ, РЕАКЦИИ, ХОДЬБА
-// ==========================================
-
-// 1. ФИКС ЗРАЧКОВ И 2.5D ЭФФЕКТ (ОБЪЁМ)
-const originalBuildPetDOM_Final = buildPetDOM;
-buildPetDOM = function() {
-    originalBuildPetDOM_Final();
-    
-    const svg = document.querySelector('#pet-svg-wrapper svg');
-    if (!svg) return;
-
-    // --- ДОБАВЛЯЕМ SVG-ФИЛЬТРЫ ДЛЯ 2.5D ---
-    let defs = svg.querySelector('defs');
-    if (!defs) {
-        defs = document.createElementNS("http://www.w3.org/2000/svg", "defs");
-        defs.innerHTML = `
-            <filter id="shadow-soft" x="-20%" y="-20%" width="140%" height="140%">
-                <feDropShadow dx="0" dy="4" stdDeviation="3" flood-color="#000" flood-opacity="0.15"/>
-            </filter>
-            <filter id="shadow-strong" x="-20%" y="-20%" width="140%" height="140%">
-                <feDropShadow dx="0" dy="6" stdDeviation="4" flood-color="#000" flood-opacity="0.25"/>
-            </filter>
-        `;
-        svg.prepend(defs);
-    }
-
-    // Применяем тени к деталям
-    const groups = svg.querySelectorAll('g');
-    if (groups[0]) groups[0].setAttribute('filter', 'url(#shadow-soft)'); // Рюкзак
-    if (groups[7]) groups[7].setAttribute('filter', 'url(#shadow-soft)'); // Тело
-    if (groups[10]) groups[10].setAttribute('filter', 'url(#shadow-strong)'); // Голова
-
-    // --- ЗРАЧКИ ---
-    if (manifest && !state.pet.isSleeping) {
-        const pupilL = manifest.parts.find(x => x.id === "05_pupil_left");
-        if (pupilL) {
-            const gL = document.createElementNS("http://www.w3.org/2000/svg", "g");
-            gL.setAttribute("transform", `translate(165, 172)`); 
-            gL.innerHTML = `<image href="${pupilL.file}" x="${-pupilL.pivot[0]}" y="${-pupilL.pivot[1]}" width="${pupilL.size[0]}" height="${pupilL.size[1]}" />`;
-            svg.appendChild(gL);
-        }
-        const pupilR = manifest.parts.find(x => x.id === "06_pupil_right");
-        if (pupilR) {
-            const gR = document.createElementNS("http://www.w3.org/2000/svg", "g");
-            gR.setAttribute("transform", `translate(235, 172)`);
-            gR.innerHTML = `<image href="${pupilR.file}" x="${-pupilR.pivot[0]}" y="${-pupilR.pivot[1]}" width="${pupilR.size[0]}" height="${pupilR.size[1]}" />`;
-            svg.appendChild(gR);
-        }
-    }
-};
-
-// 2. ФИКС РЕАКЦИЙ НА КНОПКИ (РОТ И ГЛАЗА)
-const originalFeedPet_Final = feedPet;
-feedPet = function() {
-    if(state.hearts < 10) return alert('Нужно больше сердечек!');
-    if(state.pet.isSleeping) return alert('Питомец спит.');
-    
-    state.hearts -= 10;
-    state.pet.hunger = Math.min(100, state.pet.hunger + 30);
-    state.pet.mouth = '14_mouth_open'; // Открываем рот
-    updateUI(); 
-    buildPetDOM(); // Пересобираем, чтобы рот появился
-    
-    setTimeout(() => { 
-        state.pet.mouth = null; 
-        buildPetDOM(); // Возвращаем обычный рот
-    }, 1500);
-};
-
-const originalSleepPet_Final = sleepPet;
-sleepPet = function() {
-    state.pet.isSleeping = !state.pet.isSleeping;
-    
-    if(state.pet.isSleeping) {
-        if(window.sleepInt) clearInterval(window.sleepInt);
-        window.sleepInt = setInterval(() => {
-            state.pet.energy = Math.min(100, state.pet.energy + 10);
-            updateUI();
-            if(!state.pet.isSleeping || state.pet.energy >= 100) clearInterval(window.sleepInt);
-        }, 3000);
-    }
-    updateUI(); 
-    buildPetDOM(); // Пересобираем, чтобы закрылись глаза
-};
-
-// 3. ОПТИМИЗАЦИЯ ДВИЖКА ХОДЬБЫ
-petState = 'idle'; 
-setInterval(() => {
-    const container = document.getElementById('pet-container');
-    const legL = document.getElementById('leg-l');
-    const legR = document.getElementById('leg-r');
-    const armL = document.getElementById('arm-l');
-    const armR = document.getElementById('arm-r');
-    
-    if (!container || !legL) return;
-
-    if(Math.random() < 0.05) {
-        if(state.pet.isSleeping || state.pet.ignore) petState = 'idle';
-        else {
-            petState = Math.random() < 0.6 ? 'walking' : 'idle';
-            if(petState === 'walking') dir = Math.random() > 0.5 ? 1 : -1;
-        }
-    }
-
-    if(petState === 'walking' && !state.pet.ignore && !state.pet.isSleeping) {
-        petX += dir * 2;
-        if(petX > window.innerWidth - 150) { petX = window.innerWidth - 150; dir = -1; }
-        if(petX < 10) { petX = 10; dir = 1; }
-        container.style.transform = `translateX(${petX}px) scaleX(${dir})`;
-        
-        legL.style.transform = `rotate(${Math.sin(Date.now() / 100) * 20}deg)`;
-        legR.style.transform = `rotate(${-Math.sin(Date.now() / 100) * 20}deg)`;
-        armL.style.transform = `rotate(${-Math.sin(Date.now() / 100) * 20}deg)`;
-        armR.style.transform = `rotate(${Math.sin(Date.now() / 100) * 20}deg)`;
-    } else {
-        legL.style.transform = `rotate(0deg)`;
-        legR.style.transform = `rotate(0deg)`;
-        armL.style.transform = `rotate(0deg)`;
-        armR.style.transform = `rotate(0deg)`;
-    }
-}, 50);
-
-// Пересобираем питомца при старте, чтобы применить 2.5D
-setTimeout(() => { if(manifest) buildPetDOM(); }, 1500);
+function animateStars(){let c=$("#gameCanvas"),ctx=c.getContext("2d");function frame(){if(!gameState.active||gameState.type!=="stars")return;ctx.clearRect(0,0,c.width,c.height);gameState.items.forEach((s,i)=>{if(s.hit)return;s.life++;s.y-=.35+Math.sin(s.life/15)*.2;ctx.save();ctx.shadowBlur=20;ctx.shadowColor="#ffe66d";ctx.fillStyle="#ffe98a";ctx.font=(s.r*2)+"px serif";ctx.textAlign="center";ctx.fillText("★",s.x,s.y);ctx.restore();if(s.y< -20){s.y=320;s.x=20+Math.random()*680}});gameState.raf=requestAnimationFrame(frame)}frame();c.onclick=e=>{let r=c.getBoundingClientRect(),x=(e.clientX-r.left)*720/r.width,y=(e.clientY-r.top)*300/r.height;let s=gameState.items.find(a=>!a.hit&&Math.hypot(a.x-x,a.y-y)<a.r*2);if(s){s.hit=true;gameState.score++;setGameScore();for(let j=0;j<7;j++)particle(ctx,s.x,s.y);if(gameState.score>=10)gameEnd("Ты поймала все звёзды! Волшебно! ✨")}}}
+function particle(ctx,x,y){ctx.fillStyle=`hsl(${Math.random()*360},90%,75%)`;ctx.beginPath();ctx.arc(x+(Math.random()-.5)*45,y+(Math.random()-.5)*45,2+Math.random()*3,0,Math.PI*2);ctx.fill()}
+function newMathRound(){if(gameState.round>=5){gameEnd("Математический полёт завершён! 🎈");return}let a=2+Math.floor(Math.random()*9),b=2+Math.floor(Math.random()*9),op=Math.random()<.5?"+":"×",ans=op==="+"?a+b:a*b;gameState.answer=ans;let opts=[ans,ans+2,Math.max(1,ans-3),ans+5].sort(()=>Math.random()-.5);gameState.options=opts;$("#gameTitle").textContent="Воздушный счёт 🎈";$("#gameHelp").textContent=`Реши пример: ${a} ${op} ${b}. Нажми на шарик с ответом.`;drawBalloons()}
+function drawBalloons(){let c=$("#gameCanvas"),ctx=c.getContext("2d");ctx.clearRect(0,0,720,300);gameState.options.forEach((v,i)=>{let x=100+i*175,y=140;ctx.fillStyle=["#ff8eb8","#9d8cf4","#7edbc1","#ffc96c"][i];ctx.shadowColor=ctx.fillStyle;ctx.shadowBlur=16;ctx.beginPath();ctx.ellipse(x,y,55,68,0,0,Math.PI*2);ctx.fill();ctx.shadowBlur=0;ctx.fillStyle="#fff";ctx.font="bold 30px system-ui";ctx.textAlign="center";ctx.fillText(v,x,y+10);ctx.strokeStyle="#fff";ctx.beginPath();ctx.moveTo(x,y+68);ctx.lineTo(x+5,y+105);ctx.stroke()});c.onclick=e=>{let r=c.getBoundingClientRect(),x=(e.clientX-r.left)*720/r.width;let idx=Math.round((x-100)/175);if(idx<0||idx>3)return;if(gameState.options[idx]===gameState.answer){gameState.score+=2;gameState.round++;setGameScore();if(gameState.round>=5)gameEnd("Пять примеров решены! Ты суперсчётчик! 🏅");else newMathRound()}else{$("#gameHelp").textContent="Попробуй ещё раз, ты справишься! 💗"}}}
+function drawMemory(){let c=$("#gameCanvas"),ctx=c.getContext("2d");ctx.clearRect(0,0,720,300);gameState.cards.forEach((a,i)=>{let x=95+(i%4)*175,y=85+Math.floor(i/4)*130;ctx.fillStyle=a.done?"#6cbd9b":a.open?"#fff0fa":"#9286c5";ctx.shadowColor="#d4b5ff";ctx.shadowBlur=10;ctx.beginPath();ctx.roundRect(x-48,y-48,96,96,18);ctx.fill();ctx.shadowBlur=0;ctx.fillStyle=a.open||a.done?"#57476c":"#fff";ctx.font="40px system-ui";ctx.textAlign="center";ctx.fillText(a.open||a.done?a.v:"?",x,y+14)});c.onclick=e=>{if(gameState.lock||!gameState.active)return;let r=c.getBoundingClientRect(),x=(e.clientX-r.left)*720/r.width,y=(e.clientY-r.top)*300/r.height;let col=Math.round((x-95)/175),row=Math.floor((y-85)/130),i=row*4+col;if(i<0||i>=8||col<0||col>3)return;let a=gameState.cards[i];if(a.open||a.done)return;a.open=true;if(gameState.first===null){gameState.first=i;drawMemory();return}gameState.lock=true;drawMemory();let first=gameState.cards[gameState.first];setTimeout(()=>{if(first.v===a.v){first.done=a.done=true;gameState.score+=5;setGameScore()}else{first.open=a.open=false}gameState.first=null;gameState.lock=false;drawMemory();if(gameState.cards.every(x=>x.done))gameEnd("Все пары найдены! Память чемпионки! 🧠")},650)}}
+$$(".game-card").forEach(el=>el.onclick=()=>startGame(el.dataset.game));$("#restartGame").onclick=()=>startGame(gameState.type);
+function renderParents(){if(!$("#parentData").classList.contains("hidden")){let n=Object.keys(data.completed).length;$("#pLessons").textContent=n;$("#pHearts").textContent=data.hearts;$("#pGames").textContent=data.games;let root=$("#subjectStats");root.innerHTML="";subjects.forEach(s=>{let score=data.scores[s[0]];let d=document.createElement("div");d.style.margin="10px 0";d.innerHTML=`<b>${s[1]} ${s[2]}</b><span style="float:right">${score===undefined?"Нет данных":score+"%"}</span><div class="progress"><i style="width:${score||0}%"></i></div>`;root.append(d)})}}
+$("#pinButton").onclick=()=>{if($("#pinInput").value==="1234"){$("#parentLock").classList.add("hidden");$("#parentData").classList.remove("hidden");$("#pinError").textContent="";renderParents()}else $("#pinError").textContent="Неверный PIN. Попробуйте ещё раз."};
+$("#pinInput").addEventListener("keydown",e=>{if(e.key==="Enter")$("#pinButton").click()});$("#parentExit").onclick=()=>{$("#parentData").classList.add("hidden");$("#parentLock").classList.remove("hidden");$("#pinInput").value=""};
+$("#resetData").onclick=()=>{if(confirm("Точно сбросить весь прогресс? Это действие нельзя отменить.")){data=fresh();save();renderLessons();renderShop();updatePet();renderParents();toast("Прогресс сброшен")}};
 </script>
-</body>
-</html>
+</body></html>
